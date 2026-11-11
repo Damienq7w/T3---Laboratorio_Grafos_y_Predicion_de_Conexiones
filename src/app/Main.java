@@ -1,7 +1,13 @@
 package app;
 
+import algoritmos.Estadisticas;
+import algoritmos.Recomendador;
+import algoritmos.Recorridos;
 import estructuras.Grafo;
+import estructuras.ValidadorIntegridad;
+import java.util.ArrayList;
 import java.util.Scanner;
+import modelo.Candidato;
 
 /**
  * Menu de consola del sistema de recomendacion de companeros de proyecto.
@@ -10,6 +16,7 @@ import java.util.Scanner;
  * Responsable: Luis Silva
  */
 public class Main {
+    private static final int TOTAL_RECOMENDACIONES = 3;
     private static final Grafo grafo = new Grafo();
     private static Entrada entrada;
 
@@ -27,7 +34,7 @@ public class Main {
         int opcion;
         do {
             mostrarMenu();
-            opcion = entrada.leerEntero("Seleccione una opcion: ", 0, 5);
+            opcion = entrada.leerEntero("Seleccione una opcion: ", 0, 10);
             System.out.println();
             switch (opcion) {
                 case 1 -> registrarEstudiante();
@@ -35,6 +42,11 @@ public class Main {
                 case 3 -> eliminarColaboracion();
                 case 4 -> eliminarEstudiante();
                 case 5 -> visualizarGrafo();
+                case 6 -> recorrerBfs();
+                case 7 -> recorrerDfs();
+                case 8 -> mostrarVecinosComunes();
+                case 9 -> recomendarConexiones();
+                case 10 -> mostrarEstadisticas();
                 case 0 -> System.out.println("Programa finalizado.");
                 default -> System.out.println("Opcion no valida.");
             }
@@ -49,6 +61,11 @@ public class Main {
         System.out.println(" 3. Eliminar conexion");
         System.out.println(" 4. Eliminar usuario o entidad");
         System.out.println(" 5. Visualizar grafo");
+        System.out.println(" 6. Recorrer mediante BFS");
+        System.out.println(" 7. Recorrer mediante DFS");
+        System.out.println(" 8. Mostrar vecinos comunes");
+        System.out.println(" 9. Recomendar conexiones");
+        System.out.println("10. Mostrar estadisticas");
         System.out.println(" 0. Salir");
         System.out.println("--------------------------------------------");
     }
@@ -136,6 +153,99 @@ public class Main {
         System.out.println(grafo.mostrar());
     }
 
+    // ---------------------------------------------------------------- 6
+    private static void recorrerBfs() {
+        if (!hayDatos()) {
+            return;
+        }
+        String inicio = pedirExistente("Estudiante de inicio: ");
+        if (inicio == null) {
+            return;
+        }
+        ArrayList<String> orden = Recorridos.bfs(grafo, inicio);
+        System.out.println("BFS desde " + inicio + ": " + unir(orden, " -> "));
+        System.out.println("Estudiantes alcanzados: " + orden.size() + " de " + grafo.getCantidadVertices());
+    }
+
+    // ---------------------------------------------------------------- 7
+    private static void recorrerDfs() {
+        if (!hayDatos()) {
+            return;
+        }
+        String inicio = pedirExistente("Estudiante de inicio: ");
+        if (inicio == null) {
+            return;
+        }
+        ArrayList<String> orden = Recorridos.dfs(grafo, inicio);
+        System.out.println("DFS desde " + inicio + ": " + unir(orden, " -> "));
+        System.out.println("Estudiantes alcanzados: " + orden.size() + " de " + grafo.getCantidadVertices());
+    }
+
+    // ---------------------------------------------------------------- 8
+    private static void mostrarVecinosComunes() {
+        if (!hayDatos()) {
+            return;
+        }
+        String a = pedirExistente("Primer estudiante: ");
+        if (a == null) {
+            return;
+        }
+        String b = pedirExistente("Segundo estudiante: ");
+        if (b == null) {
+            return;
+        }
+        if (a.equals(b)) {
+            System.out.println("Elija dos estudiantes distintos.");
+            return;
+        }
+        ArrayList<String> comunes = Recomendador.vecinosComunes(grafo, a, b);
+        if (comunes.isEmpty()) {
+            System.out.println(a + " y " + b + " no tienen colaboradores en comun.");
+        } else {
+            System.out.println("Colaboradores en comun entre " + a + " y " + b + ": " + unir(comunes, ", "));
+        }
+        System.out.println("Puntaje: " + comunes.size());
+        if (grafo.existeArista(a, b)) {
+            System.out.println("Nota: " + a + " y " + b + " ya colaboran directamente.");
+        }
+    }
+
+    // ---------------------------------------------------------------- 9
+    private static void recomendarConexiones() {
+        if (!hayDatos()) {
+            return;
+        }
+        String nombre = pedirExistente("Estudiante a quien recomendar: ");
+        if (nombre == null) {
+            return;
+        }
+        ArrayList<Candidato> candidatos = Recomendador.recomendar(grafo, nombre, TOTAL_RECOMENDACIONES);
+        if (candidatos.isEmpty()) {
+            System.out.println("No hay recomendaciones para " + nombre
+                    + ": no existen companeros a dos pasos sin colaboracion directa.");
+            return;
+        }
+        System.out.println("Companeros de proyecto recomendados para " + nombre + ":");
+        for (int i = 0; i < candidatos.size(); i++) {
+            System.out.println("  " + (i + 1) + ". " + candidatos.get(i));
+        }
+        System.out.println("(formato: nombre (puntaje): colaboradores en comun)");
+    }
+
+    // ---------------------------------------------------------------- 10
+    private static void mostrarEstadisticas() {
+        System.out.println(Estadisticas.resumen(grafo));
+        ArrayList<String> problemas = ValidadorIntegridad.validar(grafo);
+        if (problemas.isEmpty()) {
+            System.out.println("Integridad del grafo: OK (sin duplicados ni referencias invalidas)");
+        } else {
+            System.out.println("Integridad del grafo: " + problemas.size() + " problema(s)");
+            for (String problema : problemas) {
+                System.out.println("  - " + problema);
+            }
+        }
+    }
+
     // ---------------------------------------------------------- auxiliares
 
     /** Pide un nombre y verifica que exista. Devuelve el nombre tal como esta guardado, o null. */
@@ -157,5 +267,16 @@ public class Main {
             return false;
         }
         return true;
+    }
+
+    private static String unir(ArrayList<String> lista, String separador) {
+        StringBuilder texto = new StringBuilder();
+        for (int i = 0; i < lista.size(); i++) {
+            if (i > 0) {
+                texto.append(separador);
+            }
+            texto.append(lista.get(i));
+        }
+        return texto.toString();
     }
 }
