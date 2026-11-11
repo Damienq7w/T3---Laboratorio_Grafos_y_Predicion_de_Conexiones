@@ -1,1 +1,3 @@
-# T3---Laboratorio_Grafos_y_Predicion_de_Conexiones
+# T3 - Laboratorio de grafos y prediccion de conexiones (Grupo 2)
+
+> Responsable: Josue Jampier Camacho
