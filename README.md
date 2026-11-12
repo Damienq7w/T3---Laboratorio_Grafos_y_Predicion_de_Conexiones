@@ -1,4 +1,4 @@
-# T3 · Laboratorio de grafos y predicción de conexiones
+# T6 · Laboratorio de grafos y predicción de conexiones
 
 **Grupo 2 · Red de colaboración académica**  
 Universidad Técnica de Ambato · Ingeniería de Software · Estructura de Datos
